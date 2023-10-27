@@ -14,11 +14,21 @@
 		return false;
 	}
 	
+	var strStatusSummary = 'ok';	
+	
 	var aPackages = [];
 		
 	function ResolveDependencyTree(currentpackage)
 	{
 		var currentpackage = Clone(currentpackage);
+		if (GetStringValue(currentpackage['dependency_status_summary']) == '')
+		{
+			currentpackage['dependency_status_summary'] = currentpackage['dependency_status'];
+			if (GetStringValue(currentpackage['dependency_status_summary']) == '')
+			{
+				currentpackage['dependency_status_summary'] = 'ok';
+			}			
+		}
 		
 		var aDependencies = GetArrayValue(GetValue(currentpackage,'_dependencies'));
 		for (var nDependency = 0; nDependency < aDependencies.length; nDependency++)
@@ -41,15 +51,30 @@
 					
 					if (strMinimalCommonVersion == false)
 					{
-						aPackages[nPackage]['compatible_versions'] = '';
-						aPackages[nPackage]['dependency_status'] = 'conflicting_versions';
+						if (aPackages[nPackage]['dependency_status_summary'] == 'missing')
+						{
+							aPackages[nPackage] = Clone(currentpackage);
+							strStatusSummary = 'missing';
+							//aPackages[nPackage]['dependency_status_'] = strStatusSummary;
+						}
+						else
+						{
+							aPackages[nPackage]['compatible_versions'] = '';
+							strStatusSummary = 'conflicting_versions';
+							aPackages[nPackage]['dependency_status'] = strStatusSummary;
+							aPackages[nPackage]['dependency_status_summary'] = strStatusSummary;
+						}
 					}
 					else
 					{
 						aPackages[nPackage]['compatible_versions'] = strMinimalCommonVersion;
-						if (IsVersionCompatible(currentpackage['version'],strMinimalCommonVersion) == false)
+						if (x_snc_devtools.CompareVersion(aPackages[nPackage]['version'],currentpackage['version']) < 0)
 						{
-							aPackages[nPackage]['dependency_status'] = 'incompatible_version';
+							aPackages[nPackage] = Clone(currentpackage);
+							if (CompareDependencyStatus(strStatusSummary,currentpackage['dependency_status_summary']) < 0) 
+							{
+								strStatusSummary = currentpackage['dependency_status_summary'];
+							}					
 						}
 					}
 					
@@ -64,10 +89,29 @@
 		if (bExists == false)
 		{
 			aPackages.push(currentpackage);
+			if (CompareDependencyStatus(strStatusSummary,currentpackage['dependency_status_summary']) < 0) 
+			{
+				strStatusSummary = currentpackage['dependency_status_summary'];
+			}
 		}
 	}
 	
 	ResolveDependencyTree(dependencytree);
+	
+	if (aPackages.length > 0)
+	{
+		if (GetStringValue(aPackages[aPackages.length-1]['dependency_status_summary']) == '')
+		{
+			aPackages[aPackages.length-1]['dependency_status_summary'] = strStatusSummary;
+		}
+		else
+		{
+			if (CompareDependencyStatus(strStatusSummary,aPackages[aPackages.length-1]['dependency_status_summary']) > 0)
+			{
+				aPackages[aPackages.length-1]['dependency_status_summary'] = strStatusSummary;
+			}
+		}
+	}	
 	
 	return aPackages;	
 }]]></script>
@@ -75,13 +119,13 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2023-06-09 16:37:44</sys_created_on>
         <sys_id>9929460e1b1b2510cd6153d16b4bcb5c</sys_id>
-        <sys_mod_count>5</sys_mod_count>
+        <sys_mod_count>36</sys_mod_count>
         <sys_name>GetDependencyListFromTree</sys_name>
         <sys_package display_value="DevTools WORK IN PROGRESS" source="x_snc_devtools">d689f6901bd38450a89720a8ec4bcbfd</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="DevTools WORK IN PROGRESS">d689f6901bd38450a89720a8ec4bcbfd</sys_scope>
         <sys_update_name>sys_script_include_9929460e1b1b2510cd6153d16b4bcb5c</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2023-08-07 12:25:43</sys_updated_on>
+        <sys_updated_on>2023-10-26 11:31:41</sys_updated_on>
     </sys_script_include>
 </record_update>
